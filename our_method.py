@@ -387,7 +387,7 @@ class OurAlgorithm(BaseAttack):
                 high_mask = abs(inputs_ll - unnorm_inps)
                 cost5 = lowFre_loss(high_mask, adv_high_mask)
 
-                cost = cost1 + self.lamb * cost2 + 0.3 * cost4 + self.bundary/(cost5+0.1) + 0.9*cost3
+                cost = cost1 + self.lamb * cost2 + 0.8 * cost4 + self.bundary/(cost5+0.1) +self.bundary*cost3
                 #cost = cost4
 
                 #print("cos4",cost4,average_pairwise_interaction)
@@ -413,8 +413,8 @@ class OurAlgorithm(BaseAttack):
                 #ir_attention = only_add_one_mask[location,:,:,:]+ir_attention
             #ir_attention_numpy = ir_attention.cpu().numpy()
             grad = grad / torch.mean(torch.abs(grad), dim=[1, 2, 3], keepdim=True)
-            grad += momentum * self.decay
-            momentum = grad
+            #grad += momentum * self.decay
+            #momentum = grad
 
 
             perts.data = self._update_perts(perts.data, grad, self.step_size)
@@ -424,7 +424,7 @@ class OurAlgorithm(BaseAttack):
         return (self._sub_mean_div_std(unnorm_inps+perts.data)).detach(), None,(self._sub_mean_div_std(10*perts.data)).detach()
 
 class OurAlgorithm_MI(BaseAttack):
-    def __init__(self, model_name, ablation_study='1,1,1', sample_num_batches=130, lamb=0.1, steps=10, epsilon=16/255, target=False, decay=1.0):
+    def __init__(self, model_name, bundary, ablation_study='0,0,0', sample_num_batches=130, lamb=0.1, steps=10, epsilon=16/255, target=False, decay=1.0):
         super(OurAlgorithm_MI, self).__init__('OurAlgorithm_MI', model_name, target)
         self.epsilon = epsilon
         self.steps = steps
@@ -533,10 +533,10 @@ class OurAlgorithm_MI(BaseAttack):
             perts.data = self._update_perts(perts.data, grad, self.step_size)
             perts.data = torch.clamp(unnorm_inps.data + perts.data, 0.0, 1.0) - unnorm_inps.data
             perts.grad.data.zero_()
-        return (self._sub_mean_div_std(unnorm_inps+perts.data)).detach(), None
+        return (self._sub_mean_div_std(unnorm_inps+perts.data)).detach(), None,(self._sub_mean_div_std(10*perts.data)).detach()
 
 class OurAlgorithm_SGM(BaseAttack):
-    def __init__(self, model_name, sgm_control='1,0', sample_num_batches=130, lamb=0.1, steps=10, epsilon=16/255, target=False):
+    def __init__(self, model_name,  bundary,sgm_control='1,0', sample_num_batches=130, lamb=0.1, steps=10, epsilon=16/255, target=False):
         super(OurAlgorithm_SGM, self).__init__('OurAlgorithm_SGM', model_name, target)
         self.epsilon = epsilon
         self.steps = steps
@@ -661,7 +661,7 @@ class OurAlgorithm_SGM(BaseAttack):
             perts.data = self._update_perts(perts.data, grad, self.step_size)
             perts.data = torch.clamp(unnorm_inps.data + perts.data, 0.0, 1.0) - unnorm_inps.data
             perts.grad.data.zero_()
-        return (self._sub_mean_div_std(unnorm_inps+perts.data)).detach(), None
+        return (self._sub_mean_div_std(unnorm_inps+perts.data)).detach(), None,(self._sub_mean_div_std(10*perts.data)).detach()
 
 class OurAlgorithm_SGM_MI(BaseAttack):
     def __init__(self, model_name,bundary, sgm_control='1,0', sample_num_batches=130, lamb=0.1, steps=10, epsilon=16/255, target=False, decay=1.0):
